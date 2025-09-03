@@ -77,22 +77,22 @@ This service packages up a proxy server in an idiot-proof UI, and runs on Docker
 2. Follow the install guide for Nginx Proxy Manager found here: https://nginxproxymanager.com/guide/#quick-setup. You can copy/paste the suggested `docker-compose.yml` and it'll work out of the box. Personally in addition I gave the service a name so it's easier to find when doing a `docker ps`, and used real volumes over a bind mount. If you don't know what that means, ignore me.
 3. You should now have a running instance of Nginx Proxy Manager. If you go to `home.home`, you should get a holding page:
 
-![A screenshot of the Nginx Proxy Manager holding page](Screenshots07_Holding_Page.png)
+![A screenshot of the Nginx Proxy Manager holding page](Screenshots/07_Holding_Page.png)
 
 ## 3. Configure proxy hosts in Nginx Proxy Manager
 Now we get into the last main step, of creating the proxy hosts so that everything redirects:
 1. Edit the URL to go to `home.home:81`. You should see a login screen like this:
 
-![A screnshot of the Nginx Proxy Manager login page](Screenshots08_Proxy_Login.png)
+![A screnshot of the Nginx Proxy Manager login page](Screenshots/08_Proxy_Login.png)
 
 2. Enter the email address as `admin@example.com` and the password as `changeme` and press `Sign In`. You will immediately be asked to reset that login to something more secure - do so.
 3. You will now find yourself on the home screen. Click on `Proxy Hosts`:
 
-![A screenshot of where to find the proxy hosts menu in Nginx Proxy Manager](Screenshots09_Proxy_Hosts.png)
+![A screenshot of where to find the proxy hosts menu in Nginx Proxy Manager](Screenshots/09_Proxy_Hosts.png)
 
 4. Click on `Add Proxy Host`:
 
-![A screenshot showing where the button is for adding a proxy host in Nginx Proxy Manager](Screenshots10_Add_Proxy_Host.png)
+![A screenshot showing where the button is for adding a proxy host in Nginx Proxy Manager](Screenshots/10_Add_Proxy_Host.png)
 
 5. Enter the information as follows (ignore anything not specified) then click `Save`:
     - Domain Names: `plex.home` (or whatever service you want to map to).
@@ -100,7 +100,7 @@ Now we get into the last main step, of creating the proxy hosts so that everythi
     - Forward Hostname / IP: `home.home` (or whatever you set up as your A record).
     - Forward Port: `32400` (or whatever the port number is for your service, this one's the default port for Plex).
 
-![A screenshot showing how to add a proxy host in Nginx Proxy Manager](Screenshots11_Proxy_Host_Entry.png)
+![A screenshot showing how to add a proxy host in Nginx Proxy Manager](Screenshots/11_Proxy_Host_Entry.png)
 
 6. Now in a new browser tab, go to the URL you just created (note if you are following my example, your browser might helpfully redirect you to its search engine rather than navigate to your URL, in which case specifiy `http://` at the start. Once you do this once, you should be fine in future). You should be at the homepage of your service!
 
@@ -111,14 +111,14 @@ Now we get into the last main step, of creating the proxy hosts so that everythi
 ## General 502 Bad Gateway Error
 If you see this:
 
-![A screenshot of a gateway error](Screenshots12_Bad_Gateway_Error.png)
+![A screenshot of a gateway error](Screenshots/12_Bad_Gateway_Error.png)
 
 It means the reverse proxy has gone to the port you specified, but there's nothing running there. Check you've specified the correct port, and that your service is running on it.
 
 ## Home Assistant
 If you try to go to your configured Home Assistant domain, such as `ha.home`, you'll be greeted with the error `400: Bad Request`, and the following entry in your logs:
 
-![A screenshot from Home Assistant's logs showing a blocked request](Screenshots13_HA_Log_Error.png)
+![A screenshot from Home Assistant's logs showing a blocked request](Screenshots/13_HA_Log_Error.png)
 
 Note in my case the address range it's complaining about is not that of my local network or client machine, I assume this is some internal IP mapping the reverse proxy is doing.
 
@@ -129,11 +129,11 @@ To resolve, we need to edit the `configuration.yml` file for Home Assistant, and
 2. Follow the steps here: https://www.home-assistant.io/integrations/http#reverse-proxies. Note for the IP to specify, I tried using the known IP of my server, but I still kept getting the error. Instead I entered the 172 address I saw in the error logs, and it's working!
 3. Validate your changes are valid using configuration checker, then restart Home Assistant:
 
-![A screenshot showing where in Home Assistant to reload your configuration yaml](Screenshots14_HA_Config.png)
+![A screenshot showing where in Home Assistant to reload your configuration yaml](Screenshots/14_HA_Config.png)
 
 If you try again, you'll get a different error:
 
-![A screenshot showing the second Home Assistant error](Screenshots15_HA_Second_Error.png)
+![A screenshot showing the second Home Assistant error](Screenshots/15_HA_Second_Error.png)
 
 Follow on to the next section to resolve.
 
@@ -141,11 +141,11 @@ Follow on to the next section to resolve.
 1. Log in to Nginx Proxy Manager and go to the `Proxy Hosts` screen where we set up all the domains.
 2. Click on the ellipsis next to the Home Assistant entry then click `Edit`:
 
-![A screenshot showing how to edit a Proxy Host in Nginx Proxy Manager](Screenshots16_HA_Web_Sockets_Menu.png)
+![A screenshot showing how to edit a Proxy Host in Nginx Proxy Manager](Screenshots/16_HA_Web_Sockets_Menu.png)
 
 3. Turn on the toggle for `Websockets Support` and click `Save`:
 
-![A screenshot showing the websockets toggle in Nginx Proxy Manager](Screenshots17_HA_Web_Sockets_Setting.png)
+![A screenshot showing the websockets toggle in Nginx Proxy Manager](Screenshots/17_HA_Web_Sockets_Setting.png)
 
 You should now be able to go to `ha.home` and correctly see the Home Assistant homepage.
 
@@ -158,11 +158,12 @@ You get a very simple error of `Unauthorized`. A small change is required in the
 1. Navigate to the qBittorrent client interface using the classic hostname and port and log in.
 2. Go to `Settings` > `WebUI`> `Security`, uncheck `Enable Cross-Site Request Forgery (CSRF) protection` and click `Save`.
 
-![A screenshot showing how to natigate to the correct settings in qBittorrent](Screenshots18_QBT.png)
+![A screenshot showing how to natigate to the correct settings in qBittorrent](Screenshots/18_QBT.png)
 
 ## Zigbee2MQTT
 At first glance it might look like Zizbee2MQTT is working out of the box, but you'll quickly see all your devices are missing!
 
-![A screenshot of the weird behaviour in Zigbee2MQTT](Screenshots19_Z2MQTT.png)
+![A screenshot of the weird behaviour in Zigbee2MQTT](Screenshots/19_Z2MQTT.png)
 
 To resolve, enable web sockets as per the guide for Home Assistant above.
+

@@ -13,6 +13,10 @@ If you don't have a Unifi network, you might still be able to make use of this g
 
 This guide is correct as of September 2025.
 
+## Version History
+- 2025-09-03: Initial Version.
+- 2025-09-04: Simplified DNS record steps thanks to a suggestion via Reddit of using wildcard domains (thanks [Kyranak](https://www.reddit.com/r/Ubiquiti/comments/1n7htbx/comment/ncahzly/)). Cleaned up some of the language to clarify that the target of the DNS record is the reverse proxy server, which is not necessarily the same location as the target services like Plex. Made some of the screenshots clearer.
+
 ## My Requirements
 
 - If I go to `plex.home`, it should take me to Plex. If I go to `ha.home`, it should take me to Home Assistant.
@@ -27,18 +31,19 @@ This guide is correct as of September 2025.
 # Steps
 
 ## Overview
-1. Configure DNS entries in the Unifi control panel.
+1. Configure a DNS entry in the Unifi control panel.
 2. Set up Nginx Proxy Manager using Docker.
 3. Configure proxy hosts in Nginx Proxy Manager.
 4. Deal with any app specific issues with reverse proxies.
 
-This guide assumes that you want to use `.home` as the TLD for your services, such that you could have `photos.home`, `plex.home` and so on. You could use anything in theory, though I'd advise sticking to reserved TLDs like `.home` and `.local` in case you 'collide' with an actual web address.
+This guide assumes that you want to use `.home` as the TLD for your services, such that you could have `photos.home`, `plex.home` and so on. You could use anything in theory, though I'd advise sticking to reserved TLDs like `.home` and `.local` in case you 'collide' with an actual web address. Note that although `.home` is a real, reserved TLD a lot of browsers don't recognise it and assume you're searching in the address bar. To resolve, make sure you type `http://` before the URL. Or `.local` seems to be better supported, though personally I tend to avoid that one as a lot of services try to publsh their addresses as `.local` and again you could have a collision.
 
 ## 1. Configure DNS entries in the Unifi control panel
-We're going to set up a DNS 'A record', which tells Unifi how to translate a hostname into an IP, then a DNS CNAME record for each service, which redirects from the desired subdomains to the primary domain specified in the A record. You could do this entirely with A records and no CNAME records, but you would have to update _all_ the A records if the server IP ever changed- this way you only have to change one. Once this step is complete, you can go to the domains you've set up, but it'll only take you to whatever is hosted on the default Internet port, 80.
+We're going to set up a DNS 'A record', which tells Unifi how to translate a hostname into an IP, so that when you enter any `.home` address, you will be bounced to the proxy server.
 
-1. Log in to the UniFi console.
-2. Go to the settings cog, then `Policy Engine` > `Policy Table`:
+1. Decide where you are going to host the reverse proxy server (i.e. which Docker server) and make a note of its IP address. If you're a small homelab it's likely your reverse proxy server is going on the same instance as all of your other services, but it doesn't have to.
+2. Log in to the UniFi console.
+3. Go to the settings cog, then `Policy Engine` > `Policy Table`:
 
 ![A screenshot of where to find the policy engine button](Screenshots/01_Policy_Engine.png)
 
@@ -48,23 +53,11 @@ We're going to set up a DNS 'A record', which tells Unifi how to translate a hos
 
 4. Select the radio button `DNS` then enter the information as follows, then click `Add`:
     - Type: `Host (A)`.
-    - Domain Name: `home.home` (this will be the 'root' domain that everything redirects to, it could be anything but should end with .home or your chosen TLD).
-    - IP Address: `[the IP address of the server hosting your services]`.
+    - Domain Name: `*.home` (or your other chosen TLD like `*.local`).
+    - IP Address: `[the IP address you found in step 1]`.
     - TTL: `Auto`.
  
-![A screenshot showing how to add an A record in Unifi](Screenshots/04_Create_New_Policy_CNAME_Record.png)
-
-5. Click on `Creat New Policy` again, select `DNS` again and enter the information as follows, then click `Add`:
-    - Type: `Alias (CNAME)`.
-    - Alias Domain Name: `home.home` (or whatever you specified in step 4).
-    - Target Domain Name: `plex.home` (or whatever service you're looking to redirect to).
-    - TTL: `Auto`.
-
-![A screenshot showing how to add a CNAME record in Unifi](Screenshots/04_Create_New_Policy_CNAME_Record.png)
-
-6. Repeat step 5 for every service you want to add. Here's an example subset of mine:
-
-![A screenshot showing example CNAME record entries in Unifi](Screenshots/05_Example_Policies.png)
+![A screenshot showing how to add an A record in Unifi](Screenshots/03_Create_New_Policy_A_Record.png)
 
 Now if you go to any of the domains you set up, you'll bounce to whatever's hosted on that server at port 80, rather than where you'd hope. To get this working, we now need a reverse proxy.
 
@@ -75,9 +68,11 @@ This service packages up a proxy server in an idiot-proof UI, and runs on Docker
 ![A screenshot of the edits required to a Docker compose file to remap port 80](Screenshots/06_VI_Example.png)
 
 2. Follow the install guide for Nginx Proxy Manager found here: https://nginxproxymanager.com/guide/#quick-setup. You can copy/paste the suggested `docker-compose.yml` and it'll work out of the box. Personally in addition I gave the service a name so it's easier to find when doing a `docker ps`, and used real volumes over a bind mount. If you don't know what that means, ignore me.
-3. You should now have a running instance of Nginx Proxy Manager. If you go to `home.home`, you should get a holding page:
+3. You should now have a running instance of Nginx Proxy Manager. If you go to `home.home` or any other `.home` address, you should get a holding page:
 
 ![A screenshot of the Nginx Proxy Manager holding page](Screenshots/07_Holding_Page.png)
+
+This assumes you have Nginx Proxy Manager running on the same instance as your other services like Plex. If not, go to whatever the IP or hostname is of the instance you installed it on, and you'll get the same page.
 
 ## 3. Configure proxy hosts in Nginx Proxy Manager
 Now we get into the last main step, of creating the proxy hosts so that everything redirects:
@@ -104,7 +99,9 @@ Now we get into the last main step, of creating the proxy hosts so that everythi
 
 6. Now in a new browser tab, go to the URL you just created (note if you are following my example, your browser might helpfully redirect you to its search engine rather than navigate to your URL, in which case specifiy `http://` at the start. Once you do this once, you should be fine in future). You should be at the homepage of your service!
 
-7. Repeat steps 4 - 7 for any other domains you want to set up. Note some apps, like Home Assistant, don't like reverse proxies out of the box, and need additional configuration. Some examples I've encountered are listed in the section below.
+7. Repeat steps 4 - 7 for any other domains you want to set up. You might for example want to set up `proxy.home` to bounce to Nginx itself so you don't have to access it via a port, or if you had to change another service that was on port 80 to another port, now's the time to redirect it using a new domain name, for example I switched my homepage instance to `index.home`.
+  
+Note some apps, like Home Assistant, don't like reverse proxies out of the box, and need additional configuration. Some examples I've encountered are listed in the section below.
    
 # 4. Deal with any app specific issues with reverse proxies
 
@@ -166,4 +163,5 @@ At first glance it might look like Zizbee2MQTT is working out of the box, but yo
 ![A screenshot of the weird behaviour in Zigbee2MQTT](Screenshots/19_Z2MQTT.png)
 
 To resolve, enable web sockets as per the guide for Home Assistant above.
+
 

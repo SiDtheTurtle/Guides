@@ -16,6 +16,7 @@ This guide is correct as of September 2025.
 ## Version History
 - 2025-09-03: Initial Version.
 - 2025-09-04: Simplified DNS record steps thanks to a suggestion via Reddit of using wildcard domains (thanks [Kyranak](https://www.reddit.com/r/Ubiquiti/comments/1n7htbx/comment/ncahzly/)). Cleaned up some of the language to clarify that the target of the DNS record is the reverse proxy server, which is not necessarily the same location as the target services like Plex. Made some of the screenshots clearer.
+- 2025-09-05: Added workaround for the ELEGOO Centauri Carbon 3D printer web UI.
 
 ## My Requirements
 
@@ -164,4 +165,32 @@ At first glance it might look like Zizbee2MQTT is working out of the box, but yo
 
 To resolve, enable web sockets as per the guide for Home Assistant above.
 
+## ELEGOO Centauri Carbon 3D Printer Web UI
+An obscure one, but the fix might be helpful for other apps with a similar problem. Basically this is a Web UI that shows the status of the 3D printer. When you map it to a domain, for example `centauri.home`, you'll notice the UI is blank, and the following error appears in the browser console: `WebSocket connection to 'ws://centauri.home:3030/websocket' failed:`.
 
+Turning on Web Sockets support doesn't seem to resolve this. To resolve, we need to create a 'stream' and also open up another port on the Docker instance:
+
+1.  Log in to Nginx Proxy Manager and go to the `Streams` screen:
+
+![A screenshot of where the streams button is in Nginx Proxy Manager](Screenshots/20_Streams.png)
+
+2. Click on the `Add Stream` button:
+
+![A screenshot of where the add stream button is in Nginx Proxy Manager](Screenshots/21_Add_Stream.png)
+
+3. Enter the fields as follows and click save:
+  - Incoming Port: `3030`.
+  - Forward Host: `[IP address of the printer]`.
+  - Forward Port: `3030`.
+  - TCP Forwarding: `Enabled`.
+  - UDP Forwarding: `Disabled`.
+
+![A screenshot of the completed stream details](Screenshots/22_Stream_Details.png)
+
+4. Now we need to edit the `docker-compose.yml` file for your Nginx Proxy Manager and add a mapping from port 3030, to port 3030:
+
+![A screenshot of where the streams button is in Nginx Proxy Manager](Screenshots/23_Port_3030_In_Docker_Compose.png)
+
+Don't forget to 'down' and 'up' the instance to make the change stick.
+
+This should now be working fine. Do note this solution will forward _any_ traffic sent to Nginx Proxy Manager on port 3030 to the 3D printer, so be aware in case you have another server that needs that port.

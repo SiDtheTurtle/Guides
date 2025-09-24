@@ -17,6 +17,7 @@ This guide is correct as of September 2025.
 - 2025-09-03: Initial Version.
 - 2025-09-04: Simplified DNS record steps thanks to a suggestion via Reddit of using wildcard domains (thanks [Kyranak](https://www.reddit.com/r/Ubiquiti/comments/1n7htbx/comment/ncahzly/)). Cleaned up some of the language to clarify that the target of the DNS record is the reverse proxy server, which is not necessarily the same location as the target services like Plex. Made some of the screenshots clearer.
 - 2025-09-05: Added workaround for the ELEGOO Centauri Carbon 3D printer web UI.
+- 2025-09-24: Added section for ESPHome, rationalised web socket section, added text descriptions for screenshots to aid accessibility, rearranged fixes in alphabetical order.
 
 ## My Requirements
 
@@ -109,61 +110,28 @@ Note some apps, like Home Assistant, don't like reverse proxies out of the box, 
 ## General 502 Bad Gateway Error
 If you see this:
 
-![A screenshot of a gateway error](Screenshots/12_Bad_Gateway_Error.png)
+![A screenshot of a 502 gateway error](Screenshots/12_Bad_Gateway_Error.png)
 
 It means the reverse proxy has gone to the port you specified, but there's nothing running there. Check you've specified the correct port, and that your service is running on it.
 
-## Home Assistant
-If you try to go to your configured Home Assistant domain, such as `ha.home`, you'll be greeted with the error `400: Bad Request`, and the following entry in your logs:
+## General WebSockets Fix
+A number of applications misbehave unless for the proxy host you've set up, you enable websockets. As of writing these include:
 
-![A screenshot from Home Assistant's logs showing a blocked request](Screenshots/13_HA_Log_Error.png)
+- ESPHome
+- Home Assistant
+- Immich
+- Zigbee2MQTT
 
-Note in my case the address range it's complaining about is not that of my local network or client machine, I assume this is some internal IP mapping the reverse proxy is doing.
+To solve for these apps, complete the following:
 
-To resolve, we need to edit the `configuration.yml` file for Home Assistant, and change a setting in Nginx Proxy Manager.
-
-### Changes to configuration.yml
-1. Edit your `configuration.yml` according to your own Home Assistant configuration. For example as I am running HA Core, I have to SSH into the docker instance and edit it using VI.
-2. Follow the steps here: https://www.home-assistant.io/integrations/http#reverse-proxies. Note for the IP to specify, I tried using the known IP of my server, but I still kept getting the error. Instead I entered the 172 address I saw in the error logs, and it's working!
-3. Validate your changes are valid using configuration checker, then restart Home Assistant:
-
-![A screenshot showing where in Home Assistant to reload your configuration yaml](Screenshots/14_HA_Config.png)
-
-If you try again, you'll get a different error:
-
-![A screenshot showing the second Home Assistant error](Screenshots/15_HA_Second_Error.png)
-
-Follow on to the next section to resolve.
-
-### Enable Websockets Support in Nginx Proxy Manager
 1. Log in to Nginx Proxy Manager and go to the `Proxy Hosts` screen where we set up all the domains.
-2. Click on the ellipsis next to the Home Assistant entry then click `Edit`:
+2. Click on the ellipsis next to the relevant entry then click `Edit`:
 
 ![A screenshot showing how to edit a Proxy Host in Nginx Proxy Manager](Screenshots/16_HA_Web_Sockets_Menu.png)
 
 3. Turn on the toggle for `Websockets Support` and click `Save`:
 
 ![A screenshot showing the websockets toggle in Nginx Proxy Manager](Screenshots/17_HA_Web_Sockets_Setting.png)
-
-You should now be able to go to `ha.home` and correctly see the Home Assistant homepage.
-
-## Immich
-You will get a generic bad gateway error. Enable web sockets as per the guide for Home Assistant above.
-
-## qBittorrent
-You get a very simple error of `Unauthorized`. A small change is required in the qBittorrent client:
-
-1. Navigate to the qBittorrent client interface using the classic hostname and port and log in.
-2. Go to `Settings` > `WebUI`> `Security`, uncheck `Enable Cross-Site Request Forgery (CSRF) protection` and click `Save`.
-
-![A screenshot showing how to natigate to the correct settings in qBittorrent](Screenshots/18_QBT.png)
-
-## Zigbee2MQTT
-At first glance it might look like Zizbee2MQTT is working out of the box, but you'll quickly see all your devices are missing!
-
-![A screenshot of the weird behaviour in Zigbee2MQTT](Screenshots/19_Z2MQTT.png)
-
-To resolve, enable web sockets as per the guide for Home Assistant above.
 
 ## ELEGOO Centauri Carbon 3D Printer Web UI
 An obscure one, but the fix might be helpful for other apps with a similar problem. Basically this is a Web UI that shows the status of the 3D printer. When you map it to a domain, for example `centauri.home`, you'll notice the UI is blank, and the following error appears in the browser console: `WebSocket connection to 'ws://centauri.home:3030/websocket' failed:`.
@@ -194,3 +162,49 @@ Turning on Web Sockets support doesn't seem to resolve this. To resolve, we need
 Don't forget to 'down' and 'up' the instance to make the change stick.
 
 This should now be working fine. Do note this solution will forward _any_ traffic sent to Nginx Proxy Manager on port 3030 to the 3D printer, so be aware in case you have another server that needs that port.
+
+## ESPHome
+The home page will display, but you won't be able to connect to any devices. Enable web sockets as per the guide above.
+
+## Home Assistant
+If you try to go to your configured Home Assistant domain, such as `ha.home`, you'll be greeted with the error `400: Bad Request`, and the following entry in your logs:
+
+![A screenshot from Home Assistant's logs showing a blocked request](Screenshots/13_HA_Log_Error.png)
+
+Note in my case the address range it's complaining about is not that of my local network or client machine, I assume this is some internal IP mapping the reverse proxy is doing.
+
+To resolve, we need to edit the `configuration.yml` file for Home Assistant, and change a setting in Nginx Proxy Manager.
+
+### Changes to configuration.yml
+1. Edit your `configuration.yml` according to your own Home Assistant configuration. For example as I am running HA Core, I have to SSH into the docker instance and edit it using VI.
+2. Follow the steps here: https://www.home-assistant.io/integrations/http#reverse-proxies. Note for the IP to specify, I tried using the known IP of my server, but I still kept getting the error. Instead I entered the 172 address I saw in the error logs, and it's working!
+3. Validate your changes are valid using configuration checker, then restart Home Assistant:
+
+![A screenshot showing where in Home Assistant to reload your configuration yaml](Screenshots/14_HA_Config.png)
+
+If you try again, you'll get a different error:
+
+![A screenshot showing the second Home Assistant error](Screenshots/15_HA_Second_Error.png)
+
+Follow on to the next section to resolve.
+
+### Enable Websockets Support in Nginx Proxy Manager
+Follow the section above on the WebSockets fix, then you should now be able to go to `ha.home` and correctly see the Home Assistant homepage.
+
+## Immich
+You will get a generic bad gateway error. Enable web sockets as per the guide above.
+
+## qBittorrent
+You get a very simple error of `Unauthorized`. A small change is required in the qBittorrent client:
+
+1. Navigate to the qBittorrent client interface using the classic hostname and port and log in.
+2. Go to `Settings` > `WebUI`> `Security`, uncheck `Enable Cross-Site Request Forgery (CSRF) protection` and click `Save`.
+
+![A screenshot showing how to natigate to the correct settings in qBittorrent](Screenshots/18_QBT.png)
+
+## Zigbee2MQTT
+At first glance it might look like Zizbee2MQTT is working out of the box, but you'll quickly see all your devices are missing!
+
+![A screenshot of the weird behaviour in Zigbee2MQTT](Screenshots/19_Z2MQTT.png)
+
+To resolve, enable web sockets as per the guide above.

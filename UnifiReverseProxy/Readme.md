@@ -18,6 +18,7 @@ This guide is correct as of September 2025.
 - 2025-09-04: Simplified DNS record steps thanks to a suggestion via Reddit of using wildcard domains (thanks [Kyranak](https://www.reddit.com/r/Ubiquiti/comments/1n7htbx/comment/ncahzly/)). Cleaned up some of the language to clarify that the target of the DNS record is the reverse proxy server, which is not necessarily the same location as the target services like Plex. Made some of the screenshots clearer.
 - 2025-09-05: Added workaround for the ELEGOO Centauri Carbon 3D printer web UI.
 - 2025-09-24: Added section for ESPHome, rationalised web socket section, added text descriptions for screenshots to aid accessibility, rearranged fixes in alphabetical order.
+- 2025-10-07: Added section for NodeRed.
 
 ## My Requirements
 
@@ -120,6 +121,7 @@ A number of applications misbehave unless for the proxy host you've set up, you 
 - ESPHome
 - Home Assistant
 - Immich
+- NodeRed
 - Zigbee2MQTT
 
 To solve for these apps, complete the following:
@@ -194,6 +196,9 @@ Follow the section above on the WebSockets fix, then you should now be able to g
 ## Immich
 You will get a generic bad gateway error. Enable web sockets as per the guide above.
 
+## NodeRed
+The site will appear to load, but quickly you'll get a could not connect to server pop-up. Enable web sockets as per the guide above.
+
 ## qBittorrent
 You get a very simple error of `Unauthorized`. A small change is required in the qBittorrent client:
 
@@ -208,3 +213,4 @@ At first glance it might look like Zizbee2MQTT is working out of the box, but yo
 ![A screenshot of the weird behaviour in Zigbee2MQTT](Screenshots/19_Z2MQTT.png)
 
 To resolve, enable web sockets as per the guide above.
+
